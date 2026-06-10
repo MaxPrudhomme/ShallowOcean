@@ -89,9 +89,18 @@ def main():
     ap.add_argument("--prompt", required=True)
     ap.add_argument("--keep", type=float, default=0.5)
     ap.add_argument("--out", type=Path, default=Path("experts.json"))
+    ap.add_argument("--from-mass", type=Path, default=None,
+                    help="reuse a saved .npz of router mass; skip the forward pass")
     args = ap.parse_args()
 
     t0 = time.time()
+    if args.from_mass:
+        z = np.load(args.from_mass)
+        mass_prompt, mass_canvas = z["mass_prompt"], z["mass_canvas"]
+        n_layer, n_expert = mass_canvas.shape
+        n_used = 8
+        select(args, mass_prompt, mass_canvas, n_layer, n_expert, n_used, t0)
+        return
     W = Streamer(args.model)
     m = W.meta
     arch = m["general.architecture"]
@@ -224,6 +233,13 @@ def main():
               f"canvas mass top64: {np.sort(mass_canvas[il])[::-1][:64].sum()/mass_canvas[il].sum():.3f}",
               file=sys.stderr)
 
+    mass_path = args.out.with_suffix(".npz")
+    np.savez(mass_path, mass_prompt=mass_prompt, mass_canvas=mass_canvas)
+    print(f"saved raw router mass to {mass_path}", file=sys.stderr)
+    select(args, mass_prompt, mass_canvas, n_layer, n_expert, n_used, t0)
+
+
+def select(args, mass_prompt, mass_canvas, n_layer, n_expert, n_used, t0):
     n_keep = max(n_used, round(args.keep * n_expert))
     mass = mass_canvas + mass_prompt          # canvas dominates (256 rows vs P)
     sel = {il: sorted(np.argsort(-mass[il])[:n_keep].tolist()) for il in range(n_layer)}

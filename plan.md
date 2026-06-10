@@ -1,71 +1,145 @@
-# Plan: route-once expert offload for diffusiongemma-26B-A4B on a 24 GB Mac
+# Plan: freeze-aware fine-tuning of Liquid MoEs — instruction-conditioned expert freezing as a post-training patch
 
-Goal: force the diffusion MoE at
-`~/.lmstudio/models/unsloth/diffusiongemma-26B-A4B-it-GGUF/diffusiongemma-26B-A4B-it-Q4_K_M.gguf`
-to run with half its experts in memory, using the route-once idea from
-arXiv:2501.02086 (already demoed on gpt-oss-20b in `demo/`).
+## The idea in one paragraph
 
-## Why this model is a good candidate
+Apple's IFPruning (arXiv:2501.02086, in this repo) shows that selecting a
+prompt-specific subset of a larger model **once per prompt**, then decoding
+the whole response with that subset frozen, gives small-model memory/latency
+with larger-model quality. They built it into a *dense* model via joint
+training of a mask predictor with the supernet — no open weights exist. We
+will retrofit the same property onto an open *discrete-expert MoE*
+(Liquid's LFM2 family) using only post-training: fine-tune the model under a
+"router frozen to the prompt's top-k experts" constraint until it learns to
+concentrate response computation into a prompt-predictable expert subset.
+Nobody has published this for discrete-expert MoEs. If it works, any open
+MoE can be patched into an on-device model whose resident size is its
+*active* working set, not its total parameters.
 
-| fact | value |
+## Evidence we've already collected (see findings.md)
+
+| finding | implication |
 |---|---|
-| architecture | `diffusion-gemma`, 30 layers, non-causal, canvas = 256 tokens |
-| experts | **128 per layer, 8 active** (fine-grained) |
-| expert tensor bytes | 15.1 GB of the 16.8 GB file |
-| non-expert bytes (attn, embeddings, routers) | 1.66 GB |
-| machine | 24 GB RAM → full model doesn't fit comfortably |
-| at 64/128 experts | 7.6 + 1.7 ≈ **9.3 GB resident** → fits easily |
+| diffusiongemma-26B-A4B pruned to 64/128 experts from one routing pass: coherent, 5.5× faster, 9 GB | route-once works when routing is *static* |
+| same model at 8/128 or 32/128: collapse (18% / 46% router mass) | zero-shot freezing far below half doesn't work |
+| diffusion expert selection 94% identical across unrelated prompts | the diffusion result came from position-driven canvas routing, not instruction content |
+| AR gemma-4-26B-A4B (`step2/drift_ar.py`): decode uses **~95/128 experts per layer** within one 200-token response; prefill-top-64 covers only 69% of decode picks | stock AR MoEs have **no small frozen working set** — load-balanced training spreads routing per token |
+| 2501.02086 §2–3 | Apple's model survives prompt-frozen sparsity *because it was trained under that constraint* — the constraint is the contribution, not the predictor |
 
-Fine-grained 128-expert routing is much more skewed/specialized than
-gpt-oss's 32 load-balanced experts, so keeping 64/128 should cover far more
-router mass than 16/32 did there. (Lesson from the gpt-oss demo: top-k per
-token ≠ working set; the kept set must cover the whole response's routing.)
+Conclusion driving this plan: the failure of zero-shot freezing is a
+**training-objective problem, not an architecture problem**. Discrete
+experts + a router are already the right machinery; the model has just never
+been asked to keep a response inside a prompt-selectable subset. That is a
+fine-tuning objective, and fine-tuning fits our hardware.
 
-## Step 0 — baseline sanity test (free)
+## Why Liquid's models
 
-Run the model as-is with `llama-diffusion-cli` (llama.cpp) with mmap enabled.
-macOS pages experts in on demand, so it may run but thrash: every denoising
-step processes the full 256-token canvas and touches many experts. Record
-wall time / residency as the baseline.
+- **LFM2.5-8B-A1B** (8.3B total / 1.5B active, 32 experts, top-4): the lab
+  rat. Built for on-device, modern (late 2025), QLoRA 4-bit base ≈ 5 GB →
+  trains on the RTX 3080 (10 GB).
+- **LFM2-24B-A2B** (24B / 2.3B active, 64 experts, top-4, Feb 2026): the
+  showcase. Same architecture family (LIV-conv + GQA hybrid), so the recipe
+  transfers. Liquid markets it as "fits in 32 GB RAM"; success here means
+  ~24B knowledge resident in ~4–5 GB. Too big for the 3080 — rented GPU only.
+- Sparser is better for us: the win is the gap between total knowledge and
+  resident bytes. First two layers are dense in the 24B (training stability),
+  conveniently exempting the layers most fragile under freezing.
+- Rejected alternatives: Qwen3.5's smallest MoE is 35B-A3B (cloud-only, and
+  Unsloth warns against QLoRA on it); OLMoE-1B-7B is fully open
+  (data+code) but 1.5 years old — kept as **fallback/control** if LFM
+  tooling fights us; gemma-4-26B-A4B untrainable on our hardware.
 
-## Step 1 — per-prompt GGUF surgery (the main deliverable)
+## Hardware assignment
 
-Force half the experts with no llama.cpp code changes:
+| machine | role |
+|---|---|
+| 24 GB Mac (this repo) | Phase 0 measurement, Phase 2 evaluation/inference (MLX) |
+| RTX 3080 / 5700X3D / 64 GB DDR4 box | Phase 1 training (QLoRA, CUDA) |
+| cloud GPU (~$0.5–1/hr, 24–48 GB) | plan B for Phase 1 (bf16 LoRA) and the 24B scale-up |
 
-1. **Route once in Python.** Read the GGUF with `gguf-py` (it dequantizes
-   Q4_K), run the prompt through the model layer-by-layer in MLX (streaming,
-   never holding more than ~a layer), accumulate each layer's router softmax
-   mass per expert. Diffusion wrinkle: there is no prefill/decode split —
-   collect stats on the **first denoising step** (prompt + masked canvas),
-   then freeze the expert set for the remaining steps.
-2. **Write a pruned GGUF.** Slice every `blk.N.ffn_*_exps` tensor to the
-   selected 64 experts (raw quantized block copy, no requantization), slice
-   the router `ffn_gate_inp` rows to match, set `expert_count = 64` in the
-   metadata. Output: a self-consistent ~9 GB model.
-3. **Decode with stock llama.cpp**, which sees an ordinary 64-expert model
-   that fits in RAM.
+## Phase 0 — baselines (Mac, free, ~a day)
 
-Cost: ~30 s of GGUF rewriting per prompt. Amortize by building per-*task*
-expert sets from a few calibration prompts and reusing the pruned file.
+1. Port `step2/drift_ar.py` to LFM2.5-8B-A1B (hook its router the same way).
+   Record: per-layer decode expert union, prefill→decode pick coverage at
+   k = 4/8/16/32, tok/s, peak memory. Expect failure numbers like gemma's —
+   these are the "before" measurements the whole result will be judged
+   against.
+2. Same on OLMoE-1B-7B-0125 (control, and insurance if LFM tooling breaks).
+3. Quality baseline: a fixed eval set (~20 prompts across code / reasoning /
+   chat / knowledge) generated by the unmodified model, kept for A/B grading
+   in Phase 2.
 
-Why this split: llama.cpp's battle-tested forward pass does the actual
-generation; the hand-written Python forward only produces routing
-*statistics*, which tolerate small numerical differences.
+Deliverable: `step3/drift_lfm.py`, `findings.md` table, eval prompt set.
 
-## Step 2 — full MLX port (only if Step 1 falls short)
+## Phase 1 — freeze-aware fine-tuning (3080 box, the core experiment)
 
-Port diffusion-gemma to MLX like the gpt-oss demo (live expert slicing, no
-GGUF rewrite). Requires reimplementing the diffusion sampling loop (iterative
-canvas unmasking) and arch quirks from llama.cpp source: per-layer sliding
-window pattern, dual RoPE bases (1e6 full / 1e4 SWA), mixed KV head counts
-(8/2), `enc_layer_output_scale`, logit softcap 30. Higher effort, silent-
-garbage risk if any detail is wrong.
+Objective: SFT where each example is trained under the constraint the model
+will face at inference.
 
-## Risks / open questions
+Per training example:
+1. Run the prompt (no response) through the model; accumulate router softmax
+   mass per layer (exactly `route_stats.py` / `drift_ar.py` logic).
+2. Select top-k experts per layer; build a router mask.
+3. Teacher-force the full example with the router masked to that set —
+   renormalize top-4 selection within the kept k.
+4. Loss: standard LM loss on the response. Optionally add a distillation
+   term against the unmasked model's logits (cheap quality anchor).
 
-- Does the installed llama.cpp build support the `diffusion-gemma` arch?
-  (unsloth shipped the GGUF, so upstream support presumably exists — verify.)
-- Quality at 64/128 is unmeasured; sweep keep fraction like the gpt-oss demo
-  (it stayed coherent at 50% experts, degenerated at 25%).
-- Router stats from denoising step 1 may shift in later steps as the canvas
-  unmasks; if quality suffers, collect stats over the first few steps instead.
+Training schedule:
+- **Anneal k**: start k=16/32 (where the frozen model is merely degraded,
+  not broken), step down 16 → 8 → 6 → 4 as loss recovers. The anneal is the
+  mechanism that *re-concentrates* routing; jumping straight to k=4 risks
+  the collapse we measured zero-shot.
+- **Trainable params**: LoRA on attention + expert FFNs, and — non-negotiable
+  — the **router projections trained fully** (they're tiny; re-concentrating
+  routing is most of the work; default LoRA configs skip them).
+- Data: a general SFT mixture (e.g. tulu/smoltalk-class), ~50–200k examples;
+  the objective matters more than the data exotic-ness.
+- Framework: TRL/peft + bitsandbytes QLoRA, or Unsloth if it supports LFM2.5.
+  Known risk: MoE QLoRA tooling is the industry-wide weak point. Time-box
+  fighting it to a few hours, then fall back to (a) OLMoE on the 3080 or
+  (b) bf16 LoRA on a rented 24–48 GB GPU.
+
+Deliverable: adapter checkpoints at each k stage + training curves.
+
+## Phase 2 — evaluation (Mac)
+
+1. **Drift re-measurement**: prefill→decode pick coverage at the trained k.
+   Success: coverage at k=8 goes from ~0.3 (Phase 0) to ≥0.95.
+2. **Frozen-resident decode**: actually evict non-selected experts (MLX or
+   llama.cpp surgery per `step1/prune_gguf.py`) and measure resident memory
+   + tok/s. Success target for 8B-A1B: ≤2.5 GB resident vs ~4.5 GB full
+   (4-bit), no per-token expert paging.
+3. **Quality A/B** against Phase 0 outputs on the fixed eval set (blind
+   side-by-side grading). Success: parity-ish at k=8, graceful at k=4.
+4. Negative control: the same frozen-decode on the *unpatched* model must
+   still fail — proves the fine-tune, not the harness, is doing the work.
+
+## Phase 3 — scale-up + write-up (only if Phase 2 succeeds)
+
+- Apply the recipe to LFM2-24B-A2B on a rented GPU (~$50–200): the headline
+  artifact — 24B-knowledge model in ~4–5 GB resident on consumer hardware.
+- Write up: the diffusion route-once results (static canvas routing makes
+  diffusion MoEs uniquely pruning-friendly), the AR drift measurements
+  (why zero-shot freezing fails), and freeze-aware fine-tuning as the fix.
+  That's a coherent paper/blog arc, all empirically grounded in this repo.
+
+## Risks
+
+| risk | mitigation |
+|---|---|
+| MoE QLoRA tooling breaks on LFM2.5 | time-box; fall back to OLMoE or cloud bf16 LoRA |
+| router never re-concentrates (5T tokens of load-balancing vs our small SFT) | the k-anneal curve will show this early — coverage at k=16 after the first stage is the go/no-go signal |
+| general-quality regression outside the SFT distribution | distillation term; keep k modest (8 not 4); evaluate broadly in Phase 2 |
+| prompt-routing too weak a selector (short prompts) | fall back to selecting on prompt + first N generated tokens, refresh once |
+| 3080 throughput too low for 200k examples | shrink data, or rent; the objective should show signal within ~10k examples |
+
+## Glossary of repo artifacts
+
+- `2501.02086.md` — Apple IFPruning paper (the target property).
+- `demo/` — original route-once demo on gpt-oss-20b (MLX).
+- `step1/` — diffusiongemma route-once + GGUF pruning pipeline (works; kept
+  as the diffusion result).
+- `step2/drift_ar.py` — AR routing-drift measurement (gemma-4-26B-A4B).
+- `step3/` (to create) — LFM drift baseline, freeze-aware training scripts,
+  eval harness.
+- `findings.md` — all measurements to date.
