@@ -153,3 +153,37 @@ zero-shot version is a diffusion-specific trick.
 5. **Decode-speed levers** (the actual ms/step): fewer steps via entropy
    bound tuning, smaller canvas / `--diffusion-blocks`, and checking whether
    the MoE matmul batches well on Metal.
+
+## Step 3 / Phase 0: LFM2.5-8B-A1B drift baseline — same failure shape as gemma
+
+`step3/drift_lfm.py` (drift_ar.py ported to mlx-lm's lfm2_moe) on the MLX
+8-bit build, 20-prompt eval set (`step3/eval_prompts.json`), 200 decode
+tokens each. 22 MoE layers (of 24; first 2 dense), 32 experts, top-4.
+Selection signal = prefill softmax mass (unbiased; the aux-free expert_bias
+is only used for top-k pick counts, exactly as the model selects).
+
+| keep (by prefill mass) | decode pick coverage | decode mass coverage |
+|---|---|---|
+| 4/32 | 0.21 | 0.23 |
+| 8/32 | 0.37 | 0.39 |
+| 16/32 | 0.63 | 0.64 |
+
+Decode expert union: **mean 27.1/32 per layer** (per-prompt means 25.0–29.5)
+over just 200 tokens. Coverage at k=8 is flat across categories (code 0.36,
+reasoning 0.35, chat 0.41, knowledge 0.38) — no prompt type routes more
+predictably than another. These numbers are nearly identical to gemma's at
+the same keep fractions (8/32 ≈ 0.37 vs gemma 32/128 ≈ 0.49; union 27/32 vs
+95/128), confirming the load-balanced-spread story is architecture-generic.
+This is the "before" table Phase 1 trains against; success = pick coverage
+at k=8 going 0.37 → ≥0.95.
+
+Logistics: 52 tok/s decode, 9.0 GB peak (MLX 8-bit) — the full model is
+comfortable on the Mac. Quality baseline for Phase 2 blind A/B:
+`step3/baseline_outputs.json` (20 prompts × ≤512 tokens, unmodified model,
+2026-06-10). Raw per-prompt drift data: `step3/drift_results.json`.
+
+One LFM-specific trap found while building the harness: `expert_bias` is
+added *after* the router softmax and only affects top-k selection, so a
+-inf gate-logit mask alone doesn't fully exclude an expert (bias reaches
++0.08; tail picks can lose to it). The Phase 1 trainer
+(`step3/train_freeze.py`) masks both the gate logits and the bias.

@@ -1,0 +1,1202 @@
+[
+  {
+    "prompt": "Write a Python function that checks if a string is a palindrome.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 4.4,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.191,
+        "dec_mass": 0.208,
+        "prefill_mass": 0.359
+      },
+      "8": {
+        "pick": 0.371,
+        "dec_mass": 0.368,
+        "prefill_mass": 0.526
+      },
+      "16": {
+        "pick": 0.63,
+        "dec_mass": 0.616,
+        "prefill_mass": 0.747
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nOkay, I need to write a Python function to check if a string is a palindrome. Hmm, a palindrome is a string that reads the same forwards and backwards. So first, I should think about how to compare the string with its reverse.\n\nWait, but there's more to it. Oh right, the problem might consider ignoring case, spaces, and punctuation. But the question doesn't specify that. Let me check the original instruction. The user just said \"checks if a string is a palindrome.\" So maybe the basic version where we consider the exact string, including case and all characters. But maybe the standard approach is to preprocess the string by removing non-alphanumeric characters and converting to lowercase. But since the problem doesn't specify, perhaps the simplest solution is to compare the string as is.\n\nSo the steps would be: take the input string, reverse it, and check if it's equal to the original. How to reverse a string in Python? Using slicing",
+    "decode_union": {
+      "mean": 26.4,
+      "min": 17,
+      "max": 31
+    },
+    "per_layer_union": [
+      30,
+      30,
+      31,
+      28,
+      22,
+      29,
+      27,
+      27,
+      17,
+      23,
+      28,
+      27,
+      21,
+      25,
+      27,
+      28,
+      25,
+      30,
+      29,
+      25,
+      26,
+      26
+    ]
+  },
+  {
+    "prompt": "Implement binary search in C, returning the index of the target or -1.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 4.1,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.223,
+        "dec_mass": 0.272,
+        "prefill_mass": 0.346
+      },
+      "8": {
+        "pick": 0.358,
+        "dec_mass": 0.415,
+        "prefill_mass": 0.512
+      },
+      "16": {
+        "pick": 0.615,
+        "dec_mass": 0.657,
+        "prefill_mass": 0.74
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nOkay, I need to implement a binary search in C that returns the index of the target or -1 if it's not found. Let me think about how binary search works.\n\nFirst, binary search requires the array to be sorted. So the function should assume that the input array is sorted. The steps are: find the middle element, compare it with the target. If it's equal, return the index. If the target is smaller, search the left half. If larger, search the right half. Repeat until found or the subarray is empty.\n\nWait, but in C, the function parameters would be the array, start and end indices, and the target. But how are the array pointers passed? The user might pass a pointer to the array, and the function would need to know the size of the array. So the function signature would be something like int binary_search(const int (*arr)[INT_MAX_SIZE), int target, int size). Or maybe using a void pointer,",
+    "decode_union": {
+      "mean": 27.8,
+      "min": 20,
+      "max": 32
+    },
+    "per_layer_union": [
+      30,
+      31,
+      32,
+      28,
+      20,
+      28,
+      30,
+      29,
+      21,
+      27,
+      28,
+      29,
+      23,
+      26,
+      28,
+      30,
+      25,
+      30,
+      30,
+      31,
+      29,
+      26
+    ]
+  },
+  {
+    "prompt": "Write a SQL query that finds the second-highest salary in an employees table.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.226,
+        "dec_mass": 0.238,
+        "prefill_mass": 0.329
+      },
+      "8": {
+        "pick": 0.368,
+        "dec_mass": 0.389,
+        "prefill_mass": 0.5
+      },
+      "16": {
+        "pick": 0.627,
+        "dec_mass": 0.643,
+        "prefill_mass": 0.731
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nWe need to produce a SQL query that finds the second-highest salary in an employees table. The user didn't specify any particular dialect, but we can assume standard SQL. Provide a query that returns the second-highest salary. Approach: use ROW_NUMBER() or RANK() window functions, or a subquery with ordering and limiting. For example:\n\nSELECT salary\nFROM (\n    SELECT salary, ROW_NUMBER() OVER (ORDER BY salary DESC) as rn\n    FROM employees\n) AS t\nWHERE rn = 2;\n\nAlternatively, using LSP (Lexit-Sorted-Planar) if PostgreSQL. Or using a CTE with a RANK() partition. Also handle ties: if multiple employees have same highest salary, second-highest might be same as highest? Usually second-highest distinct salary. So we can use DISTINCT. But the question likely expects a simple query.\n\nThus answer: Provide the query, maybe with",
+    "decode_union": {
+      "mean": 28.5,
+      "min": 23,
+      "max": 32
+    },
+    "per_layer_union": [
+      31,
+      31,
+      32,
+      31,
+      23,
+      31,
+      30,
+      29,
+      25,
+      29,
+      26,
+      30,
+      25,
+      26,
+      29,
+      31,
+      25,
+      29,
+      31,
+      29,
+      26,
+      28
+    ]
+  },
+  {
+    "prompt": "Explain what this code does and find the bug: def avg(xs): return sum(xs) / len(xs) if xs else 0",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.9,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.181,
+        "dec_mass": 0.235,
+        "prefill_mass": 0.357
+      },
+      "8": {
+        "pick": 0.304,
+        "dec_mass": 0.377,
+        "prefill_mass": 0.522
+      },
+      "16": {
+        "pick": 0.546,
+        "dec_mass": 0.624,
+        "prefill_mass": 0.741
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nWe need to explain what the code does and find the bug. The code:\n\ndef avg(xs):\n    return sum(xs) / len(xs) if xs else 0\n\nWe need to explain that it computes average of a list of numbers, returns 0 if xs is empty. The bug: division by zero? Actually if xs is empty, len(xs) is 0, so sum(xs) / len(xs) would raise ZeroDivisionError. But the conditional expression returns 0 if xs is falsy, so it avoids that. However, the bug is that it returns 0 for empty list, which may be unintended? Or maybe the bug is that it doesn't handle non-list iterables? Or maybe the bug is that it uses sum(xs) which may be O(n) and then division, but that's fine. The question: \"Explain what this code does and find the bug\". The bug",
+    "decode_union": {
+      "mean": 27.8,
+      "min": 18,
+      "max": 32
+    },
+    "per_layer_union": [
+      30,
+      32,
+      31,
+      30,
+      22,
+      29,
+      28,
+      28,
+      18,
+      20,
+      30,
+      30,
+      24,
+      23,
+      29,
+      31,
+      27,
+      30,
+      29,
+      31,
+      30,
+      30
+    ]
+  },
+  {
+    "prompt": "Write a JavaScript debounce function with a configurable delay.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.7,
+    "decode_tokens": 201,
+    "peak_gb": 9.01,
+    "coverage": {
+      "4": {
+        "pick": 0.249,
+        "dec_mass": 0.279,
+        "prefill_mass": 0.366
+      },
+      "8": {
+        "pick": 0.387,
+        "dec_mass": 0.426,
+        "prefill_mass": 0.536
+      },
+      "16": {
+        "pick": 0.633,
+        "dec_mass": 0.657,
+        "prefill_mass": 0.753
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nOkay, I need to write a debounce function in JavaScript that allows a configurable delay. Let me think about how debounce works. Debounce is a technique where a function is only executed after a certain delay from the last call. So, if the user is typing, the function doesn't run until they stop typing for a specified time.\n\nFirst, I remember that debounce functions usually take a function and a delay. The function is wrapped in a handler that sets a timeout. If another call happens before the timeout, it resets the timer. So the idea is to clear the previous timeout and set a new one each time the function is called.\n\nSo the basic structure would be something like:\n\nfunction debounce(func, delay) {\n  let timeoutId;\n  let cached = null;\n  let timeout;\n  // code here\n}\n\nWait, but how to handle the arguments? Because the debounced function might have multiple arguments. So the wrapper function should capture all arguments",
+    "decode_union": {
+      "mean": 26.8,
+      "min": 20,
+      "max": 31
+    },
+    "per_layer_union": [
+      28,
+      30,
+      31,
+      30,
+      21,
+      30,
+      29,
+      27,
+      20,
+      21,
+      26,
+      29,
+      26,
+      24,
+      28,
+      27,
+      24,
+      28,
+      29,
+      29,
+      27,
+      26
+    ]
+  },
+  {
+    "prompt": "A bat and a ball cost $1.10 together. The bat costs $1.00 more than the ball. How much does the ball cost? Explain step by step.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.196,
+        "dec_mass": 0.241,
+        "prefill_mass": 0.332
+      },
+      "8": {
+        "pick": 0.319,
+        "dec_mass": 0.406,
+        "prefill_mass": 0.508
+      },
+      "16": {
+        "pick": 0.53,
+        "dec_mass": 0.663,
+        "prefill_mass": 0.737
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nWe need to solve the classic riddle: bat and ball cost $1.10, bat costs $1.00 more than ball. How much does the ball cost? Let's define variables: Let price of ball = b, price of bat = B. Given B = b + 1.00. Also total cost: B + b = 1.10. So substitute: (b + 1) + b = 1.10 => 2b + 1 = 1.10 => 2b = 0.10 => b = 0.05. So ball costs $0.05. Then bat = b + 1 = 0.05 + 1 = $1.05. So answer: ball costs $0.05. Provide step-by-step explanation.\n\nThus final answer: The ball costs $0.05. Provide reasoning.\n\nWe should respond with step-by-step explanation. Probably also mention the algebraic equation. Provide",
+    "decode_union": {
+      "mean": 29.3,
+      "min": 22,
+      "max": 32
+    },
+    "per_layer_union": [
+      30,
+      31,
+      32,
+      32,
+      25,
+      31,
+      31,
+      32,
+      22,
+      23,
+      30,
+      30,
+      28,
+      29,
+      31,
+      31,
+      29,
+      30,
+      30,
+      31,
+      28,
+      29
+    ]
+  },
+  {
+    "prompt": "If all bloops are razzies and some razzies are lazzies, can we conclude that some bloops are lazzies? Explain.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.148,
+        "dec_mass": 0.188,
+        "prefill_mass": 0.32
+      },
+      "8": {
+        "pick": 0.291,
+        "dec_mass": 0.359,
+        "prefill_mass": 0.489
+      },
+      "16": {
+        "pick": 0.57,
+        "dec_mass": 0.632,
+        "prefill_mass": 0.725
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nWe need to parse the logical structure. The question: \"If all bloops are razzies and some razzies are lazzies, can we conclude that some bloops are lazzies?\" This is a classic categorical syllogism. Let's define:\n\n- All B are R. (All bloops are razzies)\n- Some R are L. (Some razzies are lazzies)\n\nWe want to infer: Some B are L? (Some bloops are lazzies). In classical logic, from these premises, we cannot infer that some B are L, because the middle term R is not connected to B in a way that yields a necessary connection. The universal affirmative (All B are R) and particular affirmative (Some R are L) do not guarantee any overlap between B and L. The conclusion would be a \"non sequitur\". So answer: No, we cannot conclude that some bloops are lazzies.",
+    "decode_union": {
+      "mean": 27.9,
+      "min": 23,
+      "max": 31
+    },
+    "per_layer_union": [
+      30,
+      31,
+      31,
+      31,
+      23,
+      28,
+      30,
+      29,
+      23,
+      27,
+      27,
+      31,
+      24,
+      26,
+      28,
+      28,
+      28,
+      29,
+      28,
+      29,
+      28,
+      25
+    ]
+  },
+  {
+    "prompt": "I have a 3-liter jug and a 5-liter jug. How do I measure exactly 4 liters of water?",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.01,
+    "coverage": {
+      "4": {
+        "pick": 0.19,
+        "dec_mass": 0.216,
+        "prefill_mass": 0.344
+      },
+      "8": {
+        "pick": 0.344,
+        "dec_mass": 0.374,
+        "prefill_mass": 0.51
+      },
+      "16": {
+        "pick": 0.61,
+        "dec_mass": 0.629,
+        "prefill_mass": 0.73
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nWe need to answer the question: \"I have a 3-liter jug and a 5-liter jug. How do I measure exactly 4 liters of water?\" It's a classic water jug problem. The solution: Fill the 5-liter jug, pour into the 3-liter jug until full, leaving 2 liters in the 5-liter jug. Then empty the 3-liter jug, pour the remaining 2 liters from the 5-liter jug into the 3-liter jug, making total 4 liters in the 3-liter jug. Or other steps. Provide clear steps. Possibly also mention alternative methods. The user didn't ask for any special constraints. So answer concisely, step-by-step. No extra formatting unless requested. The system says no markdown unless asked. So plain text. Provide answer.\n\nWe should restate the question? Probably not needed. Provide solution: Fill 5L, pour into 3L, empty 3L, pour remaining 2",
+    "decode_union": {
+      "mean": 28.0,
+      "min": 21,
+      "max": 31
+    },
+    "per_layer_union": [
+      30,
+      30,
+      31,
+      29,
+      21,
+      29,
+      30,
+      29,
+      26,
+      22,
+      29,
+      29,
+      25,
+      27,
+      28,
+      30,
+      27,
+      30,
+      28,
+      28,
+      29,
+      29
+    ]
+  },
+  {
+    "prompt": "A train leaves at 9:15 and travels 240 km at 80 km/h. Another leaves the same station at 10:00 at 120 km/h on the same route. When does the second train catch up?",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.257,
+        "dec_mass": 0.285,
+        "prefill_mass": 0.362
+      },
+      "8": {
+        "pick": 0.373,
+        "dec_mass": 0.426,
+        "prefill_mass": 0.53
+      },
+      "16": {
+        "pick": 0.628,
+        "dec_mass": 0.676,
+        "prefill_mass": 0.75
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nWe need to solve a relative motion problem. Two trains: first leaves at 9:15, speed 80 km/h. Second leaves at 10:00, speed 120 km/h. They travel same route (presumably same direction, same route). We need to find when the second catches up to the first.\n\nLet\u2019s define variables. Let t be time in hours after 9:15. At t=0 (9:15), first train starts from station. At t=0, second train hasn't started yet. So we need to find the time after 10:00 when the second catches up.\n\nLet distance traveled by first train as function of time: d1 = 80 * t, where t is hours after 9:15.\n\nSecond train starts at t=1 hour (since 10:00 is 45 minutes after 9:15? Actually 9:15 to 10:00 is 45 minutes = ",
+    "decode_union": {
+      "mean": 29.5,
+      "min": 22,
+      "max": 32
+    },
+    "per_layer_union": [
+      30,
+      31,
+      32,
+      32,
+      22,
+      30,
+      30,
+      31,
+      24,
+      27,
+      29,
+      30,
+      30,
+      30,
+      29,
+      31,
+      30,
+      32,
+      32,
+      28,
+      30,
+      30
+    ]
+  },
+  {
+    "prompt": "Three people check into a hotel room that costs $30. They each pay $10. Later the clerk realizes it should be $25 and sends back $5; the bellboy keeps $2 and gives them $1 each. Now they paid $27 and the bellboy has $2 \u2014 where is the missing dollar?",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.256,
+        "dec_mass": 0.284,
+        "prefill_mass": 0.336
+      },
+      "8": {
+        "pick": 0.434,
+        "dec_mass": 0.449,
+        "prefill_mass": 0.509
+      },
+      "16": {
+        "pick": 0.644,
+        "dec_mass": 0.691,
+        "prefill_mass": 0.735
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nWe need to parse the classic puzzle: three people pay $30 for a room, each pays $10, total $30. Clerk realizes it should be $25, so gives $5 back. The bellboy keeps $2 and gives $1 back to each guest. So each guest effectively paid $27 (since $30 - $5 = $25, and each got $1 back, so net $27 each). The bellboy has $2. The question: where is the missing dollar? The typical answer: there is no missing dollar; the math is consistent. The confusion arises from incorrectly adding up: they paid $27 each (total $81), the hotel got $25, bellboy $2, and they have $3 change (since each got $1 back). So $81 - $25 - $2 = $54, which equals $27 each. So no missing dollar.\n\nBut the question: \"Three people check into a hotel room that costs",
+    "decode_union": {
+      "mean": 27.9,
+      "min": 20,
+      "max": 32
+    },
+    "per_layer_union": [
+      29,
+      30,
+      32,
+      31,
+      22,
+      30,
+      29,
+      30,
+      20,
+      23,
+      30,
+      30,
+      25,
+      27,
+      29,
+      30,
+      28,
+      29,
+      27,
+      27,
+      27,
+      28
+    ]
+  },
+  {
+    "prompt": "I'm feeling overwhelmed by my workload lately. Any advice on how to prioritize?",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.9,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.254,
+        "dec_mass": 0.22,
+        "prefill_mass": 0.337
+      },
+      "8": {
+        "pick": 0.447,
+        "dec_mass": 0.4,
+        "prefill_mass": 0.511
+      },
+      "16": {
+        "pick": 0.72,
+        "dec_mass": 0.667,
+        "prefill_mass": 0.739
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nThe user asks: \"I'm feeling overwhelmed by my workload lately. Any advice on how to prioritize?\" We need to respond with helpful advice on prioritization. No extra formatting unless asked. The system says no markdown unless explicitly asked. So we should give plain text, maybe bullet points but using plain text hyphens or numbers. Provide steps, techniques like Eisenhower matrix, ABCDE, etc. Also include self-care suggestions. Keep tone empathetic. No extra commentary. Provide concise but thorough advice.\n\nWe must not add disclaimer. Provide answer directly.\n\nWe should not use bold/italic. Use plain text. Possibly numbered list.\n\nLet's produce a helpful answer.\n</think>\nI\u2019m sorry you\u2019re feeling this way \u2014 let\u2019s break the problem down into manageable steps.\n\n1. **Take a breath** \u2013 Step away for a minute, breathe deeply, and remind yourself that the workload is a series of tasks, not an endless mountain.\n\n2. **Write everything down**",
+    "decode_union": {
+      "mean": 26.5,
+      "min": 19,
+      "max": 32
+    },
+    "per_layer_union": [
+      29,
+      30,
+      32,
+      31,
+      23,
+      29,
+      26,
+      26,
+      19,
+      20,
+      25,
+      30,
+      21,
+      23,
+      27,
+      27,
+      23,
+      29,
+      29,
+      27,
+      28,
+      28
+    ]
+  },
+  {
+    "prompt": "Write a short, friendly email declining a meeting invitation because of a schedule conflict.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.267,
+        "dec_mass": 0.251,
+        "prefill_mass": 0.334
+      },
+      "8": {
+        "pick": 0.462,
+        "dec_mass": 0.418,
+        "prefill_mass": 0.508
+      },
+      "16": {
+        "pick": 0.73,
+        "dec_mass": 0.666,
+        "prefill_mass": 0.737
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nThe user wants a short, friendly email declining a meeting invitation because of a schedule conflict. No extra formatting unless asked. So we need to produce a short email, friendly tone, stating we cannot make the meeting due to a schedule conflict, perhaps offering alternative times or a brief apology. Should be concise. No extra commentary. No markdown unless requested. So plain text email.\n\nWe need to include subject line? Probably include subject line and body. The instruction: \"Write a short, friendly email declining a meeting invitation because of a schedule conflict.\" So we can include subject: \"Re: Meeting Invitation\" and then body.\n\nMake sure it's short. Let's draft:\n\nSubject: Re: Meeting Invitation\n\nHi [Name],\n\nThank you for the invitation. Unfortunately, I have a prior commitment at the scheduled time and won\u2019t be able to attend. I\u2019m sorry for any inconvenience. Would you be open to rescheduling or could I join a brief follow\u2011up",
+    "decode_union": {
+      "mean": 25.8,
+      "min": 17,
+      "max": 31
+    },
+    "per_layer_union": [
+      28,
+      31,
+      31,
+      29,
+      22,
+      29,
+      29,
+      28,
+      17,
+      21,
+      24,
+      30,
+      21,
+      21,
+      27,
+      27,
+      22,
+      27,
+      27,
+      23,
+      27,
+      26
+    ]
+  },
+  {
+    "prompt": "Suggest a 3-day itinerary for a first-time visitor to Tokyo.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.191,
+        "dec_mass": 0.192,
+        "prefill_mass": 0.335
+      },
+      "8": {
+        "pick": 0.356,
+        "dec_mass": 0.343,
+        "prefill_mass": 0.506
+      },
+      "16": {
+        "pick": 0.64,
+        "dec_mass": 0.612,
+        "prefill_mass": 0.738
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nOkay, the user wants a 3-day itinerary for a first-time visitor to Tokyo. Let me start by thinking about what a first-timer would need. They probably want a mix of iconic sights, cultural experiences, and some local flavor. They might be visiting during a specific season, but since it's not mentioned, I'll keep it general.\n\nFirst, I should consider the main attractions. Tokyo has so many famous spots: Shibuya, Shinjuku, Asakusa, Akihabara, maybe some parks or gardens. Also, food is a big part, so including sushi, ramen, and street food would be good. Transportation is important too; the subway system is efficient, so maybe suggest using a Suica card or similar.\n\nDay 1: Start with the classic areas. Asakusa and Senso-ji Temple would be a good start. Then maybe a stroll through Nakamise Street for snacks. Lunch at a",
+    "decode_union": {
+      "mean": 26.8,
+      "min": 18,
+      "max": 32
+    },
+    "per_layer_union": [
+      30,
+      31,
+      32,
+      31,
+      24,
+      30,
+      27,
+      27,
+      18,
+      22,
+      27,
+      28,
+      24,
+      23,
+      28,
+      29,
+      24,
+      28,
+      26,
+      26,
+      27,
+      27
+    ]
+  },
+  {
+    "prompt": "Help me brainstorm five names for a small coffee shop with a nautical theme.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.204,
+        "dec_mass": 0.185,
+        "prefill_mass": 0.329
+      },
+      "8": {
+        "pick": 0.391,
+        "dec_mass": 0.354,
+        "prefill_mass": 0.501
+      },
+      "16": {
+        "pick": 0.63,
+        "dec_mass": 0.602,
+        "prefill_mass": 0.733
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nOkay, the user wants five names for a small coffee shop with a nautical theme. Let me start by thinking about nautical terms and coffee-related words. Maybe combine words related to the sea with coffee elements. Words like \"anchor,\" \"sail,\" \"drift,\" \"tide,\" \"coast,\" \"harbor,\" \"mast,\" \"wave,\" \"current,\" \"sailor,\" \"compass,\" \"beacon,\" \"dock,\" \"reef,\" \"anchor,\" \"brine,\" \"sail,\" \"harbor,\" \"dockside,\" \"current,\" \"tide,\" \"current,\" \"anchor,\" \"sail,\" \"beacon,\" \"drift,\" \"harbor,\" \"dock,\" \"reef,\" \"anchor,\" \"sail,\" \"beacon,\" \"drift,\" \"harbor,\" \"dock,\" \"current,\" \"tide,\" \"anchor,\" \"sail,\" \"beacon,\" \"",
+    "decode_union": {
+      "mean": 25.0,
+      "min": 16,
+      "max": 30
+    },
+    "per_layer_union": [
+      28,
+      29,
+      30,
+      28,
+      21,
+      25,
+      28,
+      25,
+      16,
+      21,
+      23,
+      28,
+      18,
+      23,
+      27,
+      28,
+      25,
+      27,
+      23,
+      25,
+      27,
+      24
+    ]
+  },
+  {
+    "prompt": "Rewrite this sentence to sound more professional: \"hey so the thing broke again and idk why, can someone look at it\"",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.223,
+        "dec_mass": 0.237,
+        "prefill_mass": 0.319
+      },
+      "8": {
+        "pick": 0.39,
+        "dec_mass": 0.401,
+        "prefill_mass": 0.488
+      },
+      "16": {
+        "pick": 0.671,
+        "dec_mass": 0.67,
+        "prefill_mass": 0.725
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nThe user wants a rewrite of a sentence to sound more professional. The original: \"hey so the thing broke again and idk why, can someone look at it\". We need to produce a professional version. Should be polite, clear, appropriate. Possibly: \"I'm writing to inform you that the equipment has broken down again, and I'm seeking assistance to determine the cause. Could someone please review the issue at your earliest convenience?\" Something like that. The user didn't specify context, but likely a work or support scenario. Provide a single sentence or a short paragraph. The instruction: \"Rewrite this sentence to sound more professional\". So we can rewrite the whole sentence. Provide a professional version. Possibly: \"I am writing to inform you that the device has experienced another failure, and I would appreciate your assistance in diagnosing the issue.\" That is professional. Or \"I am writing to bring to your attention that the equipment has broken down again; could you",
+    "decode_union": {
+      "mean": 26.1,
+      "min": 19,
+      "max": 31
+    },
+    "per_layer_union": [
+      29,
+      31,
+      30,
+      31,
+      25,
+      30,
+      27,
+      27,
+      19,
+      19,
+      24,
+      28,
+      23,
+      21,
+      28,
+      26,
+      24,
+      26,
+      28,
+      25,
+      27,
+      26
+    ]
+  },
+  {
+    "prompt": "Explain the difference between RAM and storage to someone who isn't technical.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.181,
+        "dec_mass": 0.186,
+        "prefill_mass": 0.331
+      },
+      "8": {
+        "pick": 0.352,
+        "dec_mass": 0.35,
+        "prefill_mass": 0.501
+      },
+      "16": {
+        "pick": 0.611,
+        "dec_mass": 0.614,
+        "prefill_mass": 0.732
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nThe user asks: \"Explain the difference between RAM and storage to someone who isn't technical.\" So we need a clear, non-technical explanation, using analogies, simple language. No extra formatting unless requested. Provide a concise but thorough explanation. No markdown? The instructions say avoid formatting unless explicitly asked. So plain text. Provide maybe a short paragraph, maybe bullet points? Bullet points are formatting but plain text bullet points are okay. But we can just use simple sentences. Let's produce a clear answer.\n\nWe need to ensure we don't add disclaimer. Provide answer.\n\nWe should restate constraints? Not needed. Just answer.\n\nThus: talk about RAM as short-term, fast, volatile, like a desk surface, storage as long-term, like a filing cabinet. Use analogy: RAM is like a whiteboard where you write current tasks; storage is like a bookshelf where you keep everything. Also mention speed, persistence, capacity, cost. Provide simple language.\n\nLet",
+    "decode_union": {
+      "mean": 26.5,
+      "min": 22,
+      "max": 31
+    },
+    "per_layer_union": [
+      30,
+      31,
+      31,
+      30,
+      24,
+      29,
+      30,
+      26,
+      22,
+      23,
+      26,
+      26,
+      22,
+      24,
+      27,
+      26,
+      22,
+      28,
+      27,
+      26,
+      26,
+      26
+    ]
+  },
+  {
+    "prompt": "What causes the seasons on Earth?",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.01,
+    "coverage": {
+      "4": {
+        "pick": 0.24,
+        "dec_mass": 0.241,
+        "prefill_mass": 0.38
+      },
+      "8": {
+        "pick": 0.394,
+        "dec_mass": 0.381,
+        "prefill_mass": 0.538
+      },
+      "16": {
+        "pick": 0.641,
+        "dec_mass": 0.641,
+        "prefill_mass": 0.749
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nOkay, so I need to figure out why the seasons happen on Earth. Let me start by recalling what I know. I remember that the tilt of the Earth's axis is a key factor. But wait, why does that cause seasons? Maybe because the Earth's axis is tilted at about 23.5 degrees relative to its orbital plane around the Sun. So as the Earth orbits the Sun, different hemispheres tilt towards or away from the Sun at different times of the year. That would mean that when the Northern Hemisphere is tilted towards the Sun, it's summer there, and the Southern Hemisphere is tilted away, so it's winter. Then, when the Southern Hemisphere tilts towards the Sun, it's summer there, and the Northern is in winter. That makes sense. But is that the main reason?\n\nAlso, the distance from the Sun might play a role. The Earth's orbit is elliptical, so it's closer to the Sun in January (perihelion)",
+    "decode_union": {
+      "mean": 26.6,
+      "min": 20,
+      "max": 31
+    },
+    "per_layer_union": [
+      29,
+      31,
+      30,
+      29,
+      21,
+      27,
+      27,
+      28,
+      20,
+      25,
+      25,
+      26,
+      25,
+      25,
+      28,
+      29,
+      26,
+      28,
+      27,
+      26,
+      27,
+      26
+    ]
+  },
+  {
+    "prompt": "Summarize the main causes of World War I in one paragraph.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.177,
+        "dec_mass": 0.197,
+        "prefill_mass": 0.345
+      },
+      "8": {
+        "pick": 0.367,
+        "dec_mass": 0.374,
+        "prefill_mass": 0.518
+      },
+      "16": {
+        "pick": 0.653,
+        "dec_mass": 0.634,
+        "prefill_mass": 0.743
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nThe user asks: \"Summarize the main causes of World War I in one paragraph.\" That's a straightforward request. No disallowed content. Provide a concise paragraph summarizing main causes: militarism, alliance system, imperialism, nationalism, the assassination of Archduke Franz Ferdinand, and the July Crisis. So produce one paragraph. Ensure it's clear. No extra formatting. Provide answer.\n</think>\nWorld War I was driven by a volatile mix of long\u2011term tensions and immediate triggers: the aggressive militarism and naval arms race among the great powers created a climate of threat, while a rigid system of alliances (the Triple Entente and Triple Alliance) turned a regional dispute into a continent\u2011wide conflict; intense nationalist fervor, especially in the Balkans, fueled rivalries over territory and identity; and a fierce competition for overseas colonies intensified imperial ambitions. The spark came from the assassination of Austro\u2011Hungarian Archduke Franz Ferdinand in Saraje",
+    "decode_union": {
+      "mean": 26.7,
+      "min": 20,
+      "max": 32
+    },
+    "per_layer_union": [
+      30,
+      31,
+      32,
+      30,
+      24,
+      30,
+      28,
+      27,
+      20,
+      23,
+      25,
+      29,
+      24,
+      23,
+      29,
+      27,
+      24,
+      28,
+      27,
+      24,
+      26,
+      26
+    ]
+  },
+  {
+    "prompt": "What is photosynthesis and why does it matter for life on Earth?",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.8,
+    "decode_tokens": 201,
+    "peak_gb": 9.02,
+    "coverage": {
+      "4": {
+        "pick": 0.22,
+        "dec_mass": 0.199,
+        "prefill_mass": 0.352
+      },
+      "8": {
+        "pick": 0.425,
+        "dec_mass": 0.379,
+        "prefill_mass": 0.52
+      },
+      "16": {
+        "pick": 0.679,
+        "dec_mass": 0.634,
+        "prefill_mass": 0.745
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nThe user asks: \"What is photosynthesis and why does it matter for life on Earth?\" This is a straightforward question. The answer should define photosynthesis, describe the process, mention the main organisms (plants, algae, cyanobacteria), the light-dependent reactions, Calvin cycle, etc., and then discuss its importance: oxygen production, base of food chain, carbon cycle, climate regulation, oxygenic photosynthesis, etc. Also mention its role in energy flow, ecosystem services, oxygen supply, etc. Possibly also mention artificial photosynthesis, and its significance for future energy solutions.\n\nWe need to produce a clear, thorough answer. The user didn't ask for any particular format, but we can give a concise yet comprehensive answer. Possibly include bullet points for key points. Also mention that photosynthesis converts solar energy into chemical energy, stores it in glucose, and releases O2. It matters because it provides the primary source of organic matter, oxygen, and regulates atmospheric CO2. Also mention that it's",
+    "decode_union": {
+      "mean": 25.6,
+      "min": 17,
+      "max": 32
+    },
+    "per_layer_union": [
+      30,
+      31,
+      32,
+      29,
+      19,
+      31,
+      26,
+      26,
+      17,
+      20,
+      25,
+      27,
+      21,
+      19,
+      28,
+      25,
+      26,
+      27,
+      26,
+      27,
+      27,
+      25
+    ]
+  },
+  {
+    "prompt": "Explain how a vaccine works in simple terms.",
+    "n_experts": 32,
+    "n_moe_layers": 22,
+    "time_s": 3.9,
+    "decode_tokens": 201,
+    "peak_gb": 9.01,
+    "coverage": {
+      "4": {
+        "pick": 0.186,
+        "dec_mass": 0.203,
+        "prefill_mass": 0.352
+      },
+      "8": {
+        "pick": 0.352,
+        "dec_mass": 0.357,
+        "prefill_mass": 0.518
+      },
+      "16": {
+        "pick": 0.63,
+        "dec_mass": 0.63,
+        "prefill_mass": 0.743
+      },
+      "32": {
+        "pick": 1.0,
+        "dec_mass": 1.0,
+        "prefill_mass": 1.0
+      }
+    },
+    "text": "<think>\nThe user asks: \"Explain how a vaccine works in simple terms.\"\n\nWe need to produce a simple explanation. No extra formatting unless asked. No bold, etc. Provide plain text. Should be clear, simple. No extra commentary. Provide answer.\n\nWe must follow instructions: no markdown unless asked. So plain text. Provide explanation.\n\nWe can describe: vaccine introduces a piece of pathogen (or instructions to make it) to train immune system, produce antibodies, memory cells, etc. Use analogies like \"alarm system\" or \"training\". Keep simple.\n\nThus answer: a short paragraph or bullet points? Simple terms, maybe short sentences. Provide maybe 3-4 sentences. Let's do simple paragraph.\n\nWill not add disclaimer. Provide answer.\n</think>\nA vaccine is like a practice test for your immune system. It contains a harmless piece of a germ \u2014 or a set of instructions for the body to make a harmless protein \u2014 so that when the real germ shows",
+    "decode_union": {
+      "mean": 26.5,
+      "min": 17,
+      "max": 32
+    },
+    "per_layer_union": [
+      29,
+      32,
+      32,
+      31,
+      22,
+      29,
+      26,
+      25,
+      17,
+      24,
+      27,
+      25,
+      22,
+      23,
+      27,
+      29,
+      23,
+      29,
+      28,
+      27,
+      27,
+      28
+    ]
+  }
+]
