@@ -182,6 +182,40 @@ comfortable on the Mac. Quality baseline for Phase 2 blind A/B:
 `step3/baseline_outputs.json` (20 prompts × ≤512 tokens, unmodified model,
 2026-06-10). Raw per-prompt drift data: `step3/drift_results.json`.
 
+## Phase 1 first read (k16, step 500/2000): masked training does not concentrate free routing
+
+First training run on the cloud box (RTX 5090, 2026-06-11): `train_freeze.py
+--k 16`, interrupted at step ~520 (loss 1.67 → ~0.65 under the k16 mask).
+`drift_check.py` on the step500 checkpoint vs the no-adapter baseline, same
+CUDA harness (note: the CUDA 4-bit baseline differs from the Mac MLX numbers
+above — 0.43 vs 0.37 at k=8 — so only same-harness comparisons count):
+
+| keep | base pick cov | k16-step500 pick cov |
+|---|---|---|
+| 4/32 | 0.25 | 0.27 |
+| 8/32 | 0.43 | 0.44 |
+| 16/32 | 0.69 | 0.71 |
+
+Decode union 28.2 → 27.0/32. Within noise: **unmasked routing drift is
+unchanged by training.** Expected in hindsight — the freeze mask renormalizes
+over kept experts, so the router gets no gradient pushing mass *off* excluded
+experts; the loss optimizes behavior *under* the mask, which is also the
+deployment condition. Consequences:
+
+1. Drift coverage is the wrong success metric for this objective. The right
+   Phase 2 metric is **quality under masked decode** (route prompt →
+   `set_keep_masks` → generate) vs `baseline_outputs.json`.
+2. If concentrated free routing is ever wanted, the loss needs an explicit
+   term penalizing router mass outside the keep set.
+
+Logistics traps: transformers 5.11 + peft 0.19.1 breaks
+`PeftModel.from_pretrained` (`WeightConverter ... 'distributed_operation'`)
+AND saves `modules_to_save` gates under stripped names
+(`...feed_forward.gate.weight`). `freeze_utils.load_adapter_compat` works
+around both (rename-mapping fallback loader, now used by drift_check and
+train_freeze's --resume/--init-adapter). The first k16 eval ran without the
+trained gates because of this; numbers above are from the fixed loader.
+
 One LFM-specific trap found while building the harness: `expert_bias` is
 added *after* the router softmax and only affects top-k selection, so a
 -inf gate-logit mask alone doesn't fully exclude an expert (bias reaches

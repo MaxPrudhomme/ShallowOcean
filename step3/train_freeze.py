@@ -41,10 +41,11 @@ from pathlib import Path
 
 import torch
 from datasets import load_from_disk
-from peft import LoraConfig, PeftModel, get_peft_model
+from peft import LoraConfig, get_peft_model
 
 from freeze_utils import (
     compute_keep_masks,
+    load_adapter_compat,
     expert_lora_parameters,
     load_expert_lora,
     load_quantized_model,
@@ -118,11 +119,19 @@ def main():
     model.config.use_cache = False
 
     if args.resume:
-        model = PeftModel.from_pretrained(model, args.resume, is_trainable=True)
+        model = load_adapter_compat(
+            model, args.resume, lora_r=args.lora_r, lora_alpha=args.lora_alpha, is_trainable=True
+        )
         if not load_expert_lora(model, args.resume):
             raise SystemExit(f"no expert_lora.pt in {args.resume}")
     elif args.init_adapter:
-        model = PeftModel.from_pretrained(model, args.init_adapter, is_trainable=True)
+        model = load_adapter_compat(
+            model,
+            args.init_adapter,
+            lora_r=args.lora_r,
+            lora_alpha=args.lora_alpha,
+            is_trainable=True,
+        )
         if not load_expert_lora(model, args.init_adapter):
             raise SystemExit(f"no expert_lora.pt in {args.init_adapter}")
         print(f"continuing from adapter {args.init_adapter}")
