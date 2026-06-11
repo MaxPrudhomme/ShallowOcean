@@ -1,0 +1,22 @@
+[
+  {"category": "code", "prompt": "Write a Python function that checks whether a string is a palindrome, ignoring case and non-alphanumeric characters. Include a few test cases."},
+  {"category": "code", "prompt": "Implement a simple LRU cache in Python with get and put operations in O(1)."},
+  {"category": "code", "prompt": "Write a SQL query that finds the three most recent orders per customer from an orders table with columns customer_id, order_id, created_at."},
+  {"category": "code", "prompt": "Explain what this bash command does and what could go wrong with it: find . -name '*.log' -mtime +30 -exec rm {} \\;"},
+  {"category": "code", "prompt": "Write a JavaScript debounce function and explain when you would use it."},
+  {"category": "reasoning", "prompt": "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Explain your reasoning step by step."},
+  {"category": "reasoning", "prompt": "I have a 3-liter jug and a 5-liter jug. How do I measure exactly 4 liters of water? Walk through the steps."},
+  {"category": "reasoning", "prompt": "If all bloops are razzies and some razzies are lazzies, can we conclude that some bloops are lazzies? Explain."},
+  {"category": "reasoning", "prompt": "Three friends split a restaurant bill of $87. They each pay $30, and the waiter returns $3, keeping nothing. One friend says they each paid $29, totaling $87, plus the $3 returned makes $90, but they originally gave $90, so where did the missing dollar go? Resolve the paradox."},
+  {"category": "reasoning", "prompt": "A train leaves city A at 9:00 traveling 80 km/h toward city B, 300 km away. Another train leaves B at 9:30 traveling 100 km/h toward A. At what time do they meet?"},
+  {"category": "chat", "prompt": "I'm feeling overwhelmed at work lately. Any advice on how to manage stress better?"},
+  {"category": "chat", "prompt": "Help me write a short, friendly message to a neighbor asking them to keep the noise down at night."},
+  {"category": "chat", "prompt": "What's a good 30-minute weeknight dinner I can make with chicken, rice, and whatever vegetables I have around?"},
+  {"category": "chat", "prompt": "I'm planning a weekend trip to the mountains with friends. What should I pack and what should we not forget?"},
+  {"category": "chat", "prompt": "Recommend three books for someone who loved The Martian and explain briefly why each fits."},
+  {"category": "knowledge", "prompt": "Explain how photosynthesis works at a high level, including what goes in and what comes out."},
+  {"category": "knowledge", "prompt": "What caused the 2008 financial crisis? Give a concise overview."},
+  {"category": "knowledge", "prompt": "What is the difference between RAM and storage in a computer, and why does each matter?"},
+  {"category": "knowledge", "prompt": "Briefly describe the water cycle and why it matters for climate."},
+  {"category": "knowledge", "prompt": "Who was Ada Lovelace and why is she significant in the history of computing?"}
+]
