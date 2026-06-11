@@ -19,6 +19,7 @@ import time
 from pathlib import Path
 
 import torch
+from peft import LoraConfig, PeftModel, get_peft_model
 
 from freeze_utils import (
     RouterLogger,
@@ -30,11 +31,76 @@ from freeze_utils import (
 )
 
 REPO = Path(__file__).resolve().parent.parent
+TARGET_MODULES = r".*\.self_attn\.(q_proj|k_proj|v_proj|out_proj)$"
 
 
 def normalized_mass(logits: torch.Tensor) -> torch.Tensor:
     w = logits.sigmoid()
     return w / w.sum(dim=-1, keepdim=True)
+
+
+def _load_adapter_state(path: Path) -> dict[str, torch.Tensor]:
+    safetensors_path = path / "adapter_model.safetensors"
+    if safetensors_path.exists():
+        from safetensors.torch import load_file
+
+        return load_file(str(safetensors_path))
+    return torch.load(path / "adapter_model.bin", map_location="cpu")
+
+
+def _with_default_adapter_name(key: str) -> str:
+    if ".lora_A.weight" in key:
+        return key.replace(".lora_A.weight", ".lora_A.default.weight")
+    if ".lora_B.weight" in key:
+        return key.replace(".lora_B.weight", ".lora_B.default.weight")
+    if ".modules_to_save.weight" in key:
+        return key.replace(".modules_to_save.weight", ".modules_to_save.default.weight")
+    return key
+
+
+def load_adapter_compat(model, adapter_dir: str):
+    """Load PEFT adapter, with a manual fallback for PEFT/Transformers churn."""
+    try:
+        return PeftModel.from_pretrained(model, adapter_dir)
+    except TypeError as exc:
+        if "distributed_operation" not in str(exc):
+            raise
+        print(f"PEFT adapter loader hit {exc}; falling back to direct state_dict load")
+
+    cfg = LoraConfig(
+        r=8,
+        lora_alpha=16,
+        lora_dropout=0.0,
+        bias="none",
+        target_modules=TARGET_MODULES,
+        modules_to_save=["feed_forward.gate"],
+        task_type="CAUSAL_LM",
+    )
+    model = get_peft_model(model, cfg)
+    raw = _load_adapter_state(Path(adapter_dir))
+    model_state = model.state_dict()
+    direct = {k: v for k, v in raw.items() if k in model_state}
+    renamed = {_with_default_adapter_name(k): v for k, v in raw.items()}
+    renamed = {k: v for k, v in renamed.items() if k in model_state}
+    state = direct | renamed
+    missing, unexpected = model.load_state_dict(state, strict=False)
+    loaded = len(state)
+    if loaded == 0:
+        raise RuntimeError(
+            f"manual adapter load found no matching keys in {adapter_dir}; "
+            f"first saved keys: {list(raw)[:5]}"
+        )
+    if unexpected:
+        print(f"ignored unexpected adapter keys: {len(unexpected)}")
+    # Missing includes frozen base weights; only warn if adapter-ish keys were not loaded.
+    adapter_missing = [
+        k for k in missing if ".lora_" in k or ".modules_to_save." in k
+    ]
+    if adapter_missing:
+        print(f"warning: missing adapter keys after fallback load: {len(adapter_missing)}")
+        print(adapter_missing[:5])
+    print(f"loaded {loaded} adapter tensors from {adapter_dir}")
+    return model
 
 
 def main():
@@ -50,9 +116,7 @@ def main():
     tok = load_tokenizer()
     model = load_quantized_model()
     if args.adapter:
-        from peft import PeftModel
-
-        model = PeftModel.from_pretrained(model, args.adapter)
+        model = load_adapter_compat(model, args.adapter)
         if load_expert_lora(model, args.adapter):
             print(f"loaded expert LoRA from {args.adapter}")
     model.eval()

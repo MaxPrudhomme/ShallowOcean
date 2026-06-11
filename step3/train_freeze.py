@@ -87,6 +87,11 @@ def main():
     ap.add_argument("--warmup", type=int, default=50)
     ap.add_argument("--lora-r", type=int, default=8)
     ap.add_argument("--lora-alpha", type=int, default=16)
+    ap.add_argument(
+        "--bf16-base",
+        action="store_true",
+        help="keep base/expert weights in bf16 instead of 4-bit; needs ~24-32GB VRAM but avoids dequant overhead",
+    )
     ap.add_argument("--max-len", type=int, default=1024)
     ap.add_argument("--data", default=str(REPO / "data" / "smoltalk"))
     ap.add_argument("--out", required=True, help="adapter output dir, e.g. runs/k16")
@@ -105,7 +110,11 @@ def main():
     (out_dir / "args.json").write_text(json.dumps(vars(args), indent=1))
 
     tok = load_tokenizer()
-    model = load_quantized_model(lora_r=args.lora_r, lora_alpha=args.lora_alpha)
+    model = load_quantized_model(
+        lora_r=args.lora_r,
+        lora_alpha=args.lora_alpha,
+        quantize_base=not args.bf16_base,
+    )
     model.config.use_cache = False
 
     if args.resume:

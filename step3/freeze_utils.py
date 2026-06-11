@@ -148,8 +148,75 @@ class FusedQuantExperts(nn.Module):
         return out
 
 
+class FusedDenseExperts(nn.Module):
+    """Fused bf16 experts + batched 3D LoRA, for GPUs with enough VRAM."""
+
+    def __init__(self, num_experts: int, lora_r: int, lora_alpha: int):
+        super().__init__()
+        self.num_experts = num_experts
+        self.scaling = lora_alpha / lora_r
+
+    @classmethod
+    def from_dense(cls, experts, lora_r: int = 8, lora_alpha: int = 16, device="cuda"):
+        new = cls(experts.num_experts, lora_r, lora_alpha)
+        gu = experts.gate_up_proj.data.to(device=device, dtype=torch.bfloat16).contiguous()
+        dn = experts.down_proj.data.to(device=device, dtype=torch.bfloat16).contiguous()
+        E = experts.num_experts
+        two_i, h = gu.shape[1], gu.shape[2]
+        inter = dn.shape[2]
+        new.gate_up = nn.Parameter(gu, requires_grad=False)
+        new.down = nn.Parameter(dn, requires_grad=False)
+        new.lora_A_gate_up = nn.Parameter(torch.empty(E, lora_r, h, dtype=torch.bfloat16, device=device))
+        new.lora_B_gate_up = nn.Parameter(torch.zeros(E, two_i, lora_r, dtype=torch.bfloat16, device=device))
+        new.lora_A_down = nn.Parameter(torch.empty(E, lora_r, inter, dtype=torch.bfloat16, device=device))
+        new.lora_B_down = nn.Parameter(torch.zeros(E, h, lora_r, dtype=torch.bfloat16, device=device))
+        for a in (new.lora_A_gate_up, new.lora_A_down):
+            nn.init.kaiming_uniform_(a, a=math.sqrt(5))
+        return new
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        top_k_index: torch.Tensor,
+        top_k_weights: torch.Tensor,
+    ) -> torch.Tensor:
+        T, h = hidden_states.shape
+        K = top_k_index.shape[1]
+        E = self.num_experts
+
+        flat_e = top_k_index.reshape(-1)
+        sort_idx = torch.argsort(flat_e, stable=True)
+        sorted_e = flat_e[sort_idx]
+        counts = torch.bincount(flat_e, minlength=E)
+        group_start = counts.cumsum(0) - counts
+        pos = torch.arange(T * K, device=flat_e.device) - group_start[sorted_e]
+        token_idx = sort_idx // K
+        cap = int(counts.max())
+
+        x = hidden_states.new_zeros(E, cap, h)
+        x[sorted_e, pos] = hidden_states[token_idx]
+
+        h1 = torch.bmm(x, self.gate_up.transpose(1, 2))
+        h1 = h1 + torch.bmm(
+            torch.bmm(x, self.lora_A_gate_up.transpose(1, 2)),
+            self.lora_B_gate_up.transpose(1, 2),
+        ) * self.scaling
+        gate, up = h1.chunk(2, dim=-1)
+        act = F.silu(gate) * up
+        y = torch.bmm(act, self.down.transpose(1, 2))
+        y = y + torch.bmm(
+            torch.bmm(act, self.lora_A_down.transpose(1, 2)),
+            self.lora_B_down.transpose(1, 2),
+        ) * self.scaling
+
+        y = y[sorted_e, pos] * top_k_weights.reshape(-1)[sort_idx].unsqueeze(-1)
+        out = torch.zeros_like(hidden_states)
+        out.index_add_(0, token_idx, y.to(hidden_states.dtype))
+        return out
+
+
 def expert_lora_parameters(model):
-    """All FusedQuantExperts LoRA params (PEFT freezes these; re-enable grad)."""
+    """All fused expert LoRA params (PEFT freezes these; re-enable grad)."""
     for _, block in moe_blocks(model):
         for name in EXPERT_LORA_NAMES:
             yield getattr(block.experts, name)
@@ -268,15 +335,25 @@ def load_tokenizer():
     return AutoTokenizer.from_pretrained(MODEL_DIR)
 
 
-def load_quantized_model(device: str = "cuda", lora_r: int = 8, lora_alpha: int = 16):
-    """LFM2.5-8B-A1B with 4-bit experts + attention, bf16 everything else."""
+def load_quantized_model(
+    device: str = "cuda",
+    lora_r: int = 8,
+    lora_alpha: int = 16,
+    quantize_base: bool = True,
+):
+    """LFM2.5-8B-A1B with fused experts; optionally quantize base to 4-bit."""
     model = AutoModelForCausalLM.from_pretrained(MODEL_DIR, dtype=torch.bfloat16)
 
     for _, block in moe_blocks(model):
-        block.experts = FusedQuantExperts.from_dense(
-            block.experts, lora_r=lora_r, lora_alpha=lora_alpha, device=device
-        )
+        cls = FusedQuantExperts if quantize_base else FusedDenseExperts
+        block.experts = cls.from_dense(block.experts, lora_r=lora_r, lora_alpha=lora_alpha, device=device)
         gc.collect()
+
+    if not quantize_base:
+        model.to(device)
+        gc.collect()
+        torch.cuda.empty_cache()
+        return model
 
     from transformers.models.lfm2_moe.modeling_lfm2_moe import (
         Lfm2MoeAttention,
