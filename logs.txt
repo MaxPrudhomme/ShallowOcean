@@ -1,0 +1,276 @@
+Activated conda/uv virtual environment at /venv/main
+(main) root@C.40624358:/workspace$ cd /workspace && git clone https://github.com/MaxPrudhomme/ShallowOcean.git && cd ShallowOcean && ls -la && find step3 -maxdepth 1 -type f -print
+Cloning into 'ShallowOcean'...
+remote: Enumerating objects: 68, done.
+remote: Counting objects: 100% (68/68), done.
+remote: Compressing objects: 100% (52/52), done.
+remote: Total 68 (delta 13), reused 65 (delta 10), pack-reused 0 (from 0)
+Receiving objects: 100% (68/68), 1016.89 KiB | 9.42 MiB/s, done.
+Resolving deltas: 100% (13/13), done.
+total 1360
+drwxrwxr-x 7 root root    4096 Jun 11 20:30 .
+drwxrwxr-x 5 root root     121 Jun 11 20:30 ..
+drwxrwxr-x 8 root root    4096 Jun 11 20:30 .git
+-rw-rw-r-- 1 root root      36 Jun 11 20:30 .gitignore
+-rw-rw-r-- 1 root root   69746 Jun 11 20:30 2501.02086.md
+-rw-rw-r-- 1 root root 1275799 Jun 11 20:30 2501.02086.pdf
+drwxrwxr-x 2 root root      65 Jun 11 20:30 demo
+-rw-rw-r-- 1 root root    9761 Jun 11 20:30 findings.md
+-rw-rw-r-- 1 root root    8409 Jun 11 20:30 plan.md
+drwxrwxr-x 2 root root     135 Jun 11 20:30 step1
+drwxrwxr-x 2 root root      33 Jun 11 20:30 step2
+drwxrwxr-x 2 root root    4096 Jun 11 20:30 step3
+step3/README.md
+step3/baseline_outputs.json
+step3/drift_lfm.py
+step3/drift_results.json
+step3/eval_prompts.json
+step3/gen_baseline.py
+step3/train_freeze.py
+(main) root@C.40624358:/workspace/ShallowOcean$ python - <<'PY'
+> import sys, subprocess
+> print(sys.version)
+> try:
+>  import torch
+>  print('torch', torch.__version__, 'cuda', torch.version.cuda, 'available', torch.cuda.is_available())
+>  if torch.cuda.is_available(): print(torch.cuda.get_device_name(0), torch.cuda.get_device_capability(0))
+> except Exception as e:
+>  print('torch import error:', repr(e))
+> PY
+nvidi3.12.13 | packaged by conda-forge | (main, Mar  5 2026, 16:50:00) [GCC 14.3.0]
+torch import error: ModuleNotFoundError("No module named 'torch'")
+a-(main) root@C.40624358:/workspace/ShallowOcean$ nvidia-smi
+Thu Jun 11 20:31:00 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.58.03              Driver Version: 595.58.03      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 5090        On  |   00000000:01:00.0 Off |                  N/A |
+|  0%   42C    P8             19W /  525W |       0MiB /  32607MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+(main) root@C.40624358:/workspace/ShallowOcean$ python -m pip install --upgrade pip && python -m pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu128 && python -m pip install 'transformers>=5.0.0rc0' peft bitsandbytes datasets accelerate hf_transfer
+Requirement already satisfied: pip in /venv/main/lib/python3.12/site-packages (26.1.2)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+(main) root@C.40624358:/workspace/ShallowOcean$ cd /workspace/ShallowOcean && python - <<'PY'
+> import torch, transformers, peft, bitsandbytes as bnb, datasets
+> print('torch', torch.__version__, 'cuda', torch.version.cuda, 'available', torch.cuda.is_available())
+> print('device', torch.cuda.get_device_name(0), torch.cuda.get_device_capability(0))
+> x = torch.randn(1024, 1024, device='cuda')
+> print('cuda matmul ok', (x @ x).float().mean().item())
+> print('transformers', transformers.__version__)
+> print('peft', peft.__version__)
+> print('bnb', bnb.__version__)
+> print('datasets', datasets.__version__)
+> PY
+torch 2.12.0.dev20260408+cu128 cuda 12.8 available True
+device NVIDIA GeForce RTX 5090 (12, 0)
+cuda matmul ok 0.008512475527822971
+transformers 5.11.0
+peft 0.19.1
+bnb 0.49.2
+datasets 5.0.0
+(main) root@C.40624358:/workspace/ShallowOcean$ cd /workspace/ShallowOcean && export HF_HUB_ENABLE_HF_TRANSFER=1 && python -m huggingface_hub.commands.huggingface_cli download LiquidAI/LFM2.5-8B-A1B --local-dir models/LFM2.5-8B-A1B && python step3/prepare_data.py
+/venv/main/bin/python: Error while finding module specification for 'huggingface_hub.commands.huggingface_cli' (ModuleNotFoundError: No module named 'huggingface_hub.commands')
+(main) root@C.40624358:/workspace/ShallowOcean$ cd /workspace/ShallowOcean && export HF_HUB_ENABLE_HF_TRANSFER=1 && huggingface-cli download LiquidAI/LFM2.5-8B-A1B --local-dir models/LFM2.5-8B-A1B && python step3/prepare_data.py
+/venv/main/lib/python3.12/site-packages/huggingface_hub/constants.py:294: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Warning: `huggingface-cli` is deprecated and no longer works. Use `hf` instead.
+
+Hint: A new version of huggingface_hub (1.19.0) is available! You are using version 1.18.0.
+To update, run: hf update
+Hint: `hf` is already installed! Use it directly.
+
+Hint: Examples:
+  hf auth login
+  hf download unsloth/gemma-4-31B-it-GGUF
+  hf upload my-cool-model . .
+  hf models ls --search "gemma"
+  hf repos ls --format json
+  hf jobs run python:3.12 python -c 'print("Hello!")'
+  hf --help
+
+(main) root@C.40624358:/workspace/ShallowOcean$ cd /workspace/ShallowOcean && export HF_XET_HIGH_PERFORMANCE=1 && hf download LiquidAI/LFM2.5-8B-A1B --local-dir models/LFM2.5-8B-A1B && python step3/prepare_data.py
+Downloading (incomplete total...): 0.00B [00:00, ?B/s]                                                                                                    Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.0 [00:00<?, ?it/s]
+Fetching 10 files: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 10/10 [00:26<00:00,  2.65s/it]
+Download complete: 100%|█████████████████████████████████████████████████████████████████████████████████████████████| 17.0G/17.0G [00:26<00:00, 1.13GB/s]✓ Downloaded
+  path: /workspace/ShallowOcean/models/LFM2.5-8B-A1B
+Download complete: 100%|██████████████████████████████████████████████████████████████████████████████████████████████| 17.0G/17.0G [00:26<00:00, 638MB/s]
+python: can't open file '/workspace/ShallowOcean/step3/prepare_data.py': [Errno 2] No such file or directory
+(main) root@C.40624358:/workspace/ShallowOcean$ cd /workspace/ShallowOcean && git fetch origin exp && git checkout exp && git status --short && ls step3
+From https://github.com/MaxPrudhomme/ShallowOcean
+ * branch            exp        -> FETCH_HEAD
+branch 'exp' set up to track 'origin/exp'.
+Switched to a new branch 'exp'
+README.md  drift_check.py  eval_prompts.json  freeze_utils.py  prepare_data.py  train_freeze.py
+(main) root@C.40624358:/workspace/ShallowOcean$ cd /workspace/ShallowOcean && git branch --show-current && python step3/prepare_data.py
+exp
+downloading HuggingFaceTB/smoltalk (config 'all', split 'train')...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+README.md: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████| 9.72k/9.72k [00:00<00:00, 15.2MB/s]
+data/all/train-00000-of-00009.parquet: 100%|███████████████████████████████████████████████████████████████████████████| 223M/223M [00:02<00:00, 80.1MB/s]
+data/all/train-00001-of-00009.parquet: 100%|████████████████████████████████████████████████████████████████████████████| 223M/223M [00:01<00:00, 112MB/s]
+data/all/train-00002-of-00009.parquet: 100%|████████████████████████████████████████████████████████████████████████████| 223M/223M [00:01<00:00, 121MB/s]
+data/all/train-00003-of-00009.parquet: 100%|████████████████████████████████████████████████████████████████████████████| 223M/223M [00:01<00:00, 129MB/s]
+data/all/train-00004-of-00009.parquet: 100%|███████████████████████████████████████████████████████████████████████████| 224M/224M [00:02<00:00, 92.0MB/s]
+data/all/train-00005-of-00009.parquet: 100%|███████████████████████████████████████████████████████████████████████████| 222M/222M [00:02<00:00, 89.0MB/s]
+data/all/train-00006-of-00009.parquet: 100%|████████████████████████████████████████████████████████████████████████████| 223M/223M [00:01<00:00, 116MB/s]
+data/all/train-00007-of-00009.parquet: 100%|████████████████████████████████████████████████████████████████████████████| 224M/224M [00:02<00:00, 107MB/s]
+data/all/train-00008-of-00009.parquet: 100%|███████████████████████████████████████████████████████████████████████████| 224M/224M [00:02<00:00, 98.8MB/s]
+data/all/test-00000-of-00001.parquet: 100%|████████████████████████████████████████████████████████████████████████████| 105M/105M [00:01<00:00, 60.8MB/s]
+Generating train split: 100%|█████████████████████████████████████████████████████████████████████████| 1043917/1043917 [00:20<00:00, 51357.95 examples/s]
+Generating test split: 100%|██████████████████████████████████████████████████████████████████████████████| 54948/54948 [00:01<00:00, 53362.73 examples/s]
+loaded 1043917 conversations
+Filter (num_proc=8): 100%|███████████████████████████████████████████████████████████████████████████| 1043917/1043917 [00:03<00:00, 284564.89 examples/s]
+926730 after length filter
+Saving the dataset (2/2 shards): 100%|█████████████████████████████████████████████████████████████████| 200000/200000 [00:01<00:00, 114894.62 examples/s]
+saved 200000 examples to /workspace/ShallowOcean/data/smoltalk
+(main) root@C.40624358:/workspace/ShallowOcean$ cd /workspace/ShallowOcean && python step3/train_freeze.py --k 16 --steps 2000 --out runs/k16
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 234/234 [00:04<00:00, 57.37it/s]
+/venv/main/lib/python3.12/site-packages/bitsandbytes/backends/cuda/ops.py:213: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.
+  torch._check_is_size(blocksize)
+trainable params: 55,427,072 || all params: 772,209,408 || trainable%: 7.1777
+200000 examples from /workspace/ShallowOcean/data/smoltalk
+{'step': 1, 'loss': 1.6663, 'lr': 4e-06, 'resp_tok': 1797, 'elapsed_s': 6, 'peak_gb': 7.14}
+{'step': 10, 'loss': 1.5675, 'lr': 2.2000000000000003e-05, 'resp_tok': 22959, 'elapsed_s': 50, 'peak_gb': 7.4}
+{'step': 20, 'loss': 1.4599, 'lr': 4.2000000000000004e-05, 'resp_tok': 26112, 'elapsed_s': 100, 'peak_gb': 7.5}
+{'step': 30, 'loss': 1.2708, 'lr': 6.2e-05, 'resp_tok': 25134, 'elapsed_s': 152, 'peak_gb': 7.5}
+{'step': 40, 'loss': 1.052, 'lr': 8.2e-05, 'resp_tok': 26661, 'elapsed_s': 203, 'peak_gb': 7.5}
+{'step': 50, 'loss': 0.8357, 'lr': 0.0001, 'resp_tok': 25606, 'elapsed_s': 253, 'peak_gb': 7.5}
+{'step': 60, 'loss': 0.8643, 'lr': 9.999351124856874e-05, 'resp_tok': 26884, 'elapsed_s': 304, 'peak_gb': 7.5}
+{'step': 70, 'loss': 0.7648, 'lr': 9.997404667843075e-05, 'resp_tok': 27320, 'elapsed_s': 353, 'peak_gb': 7.5}
+{'step': 80, 'loss': 0.7739, 'lr': 9.994161134161634e-05, 'resp_tok': 28959, 'elapsed_s': 402, 'peak_gb': 7.5}
+{'step': 90, 'loss': 0.7313, 'lr': 9.989621365671902e-05, 'resp_tok': 23373, 'elapsed_s': 452, 'peak_gb': 7.5}
+{'step': 100, 'loss': 0.7668, 'lr': 9.983786540671051e-05, 'resp_tok': 28793, 'elapsed_s': 504, 'peak_gb': 7.5}
+{'step': 110, 'loss': 0.7783, 'lr': 9.976658173588244e-05, 'resp_tok': 23544, 'elapsed_s': 554, 'peak_gb': 7.5}
+{'step': 120, 'loss': 0.817, 'lr': 9.968238114591566e-05, 'resp_tok': 32700, 'elapsed_s': 606, 'peak_gb': 7.5}
+{'step': 130, 'loss': 0.7321, 'lr': 9.95852854910781e-05, 'resp_tok': 28816, 'elapsed_s': 658, 'peak_gb': 7.5}
+{'step': 140, 'loss': 0.6413, 'lr': 9.947531997255256e-05, 'resp_tok': 28887, 'elapsed_s': 707, 'peak_gb': 7.5}
+{'step': 150, 'loss': 0.7238, 'lr': 9.935251313189564e-05, 'resp_tok': 24106, 'elapsed_s': 757, 'peak_gb': 7.5}
+{'step': 160, 'loss': 0.7049, 'lr': 9.921689684362989e-05, 'resp_tok': 27551, 'elapsed_s': 807, 'peak_gb': 7.55}
+{'step': 170, 'loss': 0.6587, 'lr': 9.906850630697068e-05, 'resp_tok': 26043, 'elapsed_s': 858, 'peak_gb': 7.55}
+{'step': 180, 'loss': 0.7032, 'lr': 9.890738003669029e-05, 'resp_tok': 27018, 'elapsed_s': 908, 'peak_gb': 7.55}
+{'step': 190, 'loss': 0.6919, 'lr': 9.87335598531214e-05, 'resp_tok': 28261, 'elapsed_s': 958, 'peak_gb': 7.55}
+{'step': 200, 'loss': 0.7111, 'lr': 9.85470908713026e-05, 'resp_tok': 29196, 'elapsed_s': 1009, 'peak_gb': 7.55}
+{'step': 210, 'loss': 0.659, 'lr': 9.834802148926882e-05, 'resp_tok': 25397, 'elapsed_s': 1059, 'peak_gb': 7.55}
+{'step': 220, 'loss': 0.6852, 'lr': 9.813640337548954e-05, 'resp_tok': 31192, 'elapsed_s': 1110, 'peak_gb': 7.55}
+{'step': 230, 'loss': 0.6888, 'lr': 9.791229145545831e-05, 'resp_tok': 29442, 'elapsed_s': 1161, 'peak_gb': 7.55}
+{'step': 240, 'loss': 0.7089, 'lr': 9.767574389743682e-05, 'resp_tok': 27649, 'elapsed_s': 1211, 'peak_gb': 7.55}
+{'step': 250, 'loss': 0.8155, 'lr': 9.742682209735727e-05, 'resp_tok': 28360, 'elapsed_s': 1263, 'peak_gb': 7.55}
+{'step': 260, 'loss': 0.6867, 'lr': 9.716559066288715e-05, 'resp_tok': 30344, 'elapsed_s': 1313, 'peak_gb': 7.55}
+{'step': 270, 'loss': 0.5379, 'lr': 9.689211739666023e-05, 'resp_tok': 25541, 'elapsed_s': 1363, 'peak_gb': 7.55}
+{'step': 280, 'loss': 0.6973, 'lr': 9.66064732786784e-05, 'resp_tok': 25338, 'elapsed_s': 1414, 'peak_gb': 7.55}
+{'step': 290, 'loss': 0.6478, 'lr': 9.630873244788883e-05, 'resp_tok': 29054, 'elapsed_s': 1465, 'peak_gb': 7.55}
+{'step': 300, 'loss': 0.6874, 'lr': 9.599897218294122e-05, 'resp_tok': 28474, 'elapsed_s': 1516, 'peak_gb': 7.55}
+{'step': 310, 'loss': 0.737, 'lr': 9.567727288213005e-05, 'resp_tok': 26002, 'elapsed_s': 1566, 'peak_gb': 7.55}
+{'step': 320, 'loss': 0.6683, 'lr': 9.534371804252728e-05, 'resp_tok': 26674, 'elapsed_s': 1617, 'peak_gb': 7.55}
+{'step': 330, 'loss': 0.6837, 'lr': 9.49983942383106e-05, 'resp_tok': 25080, 'elapsed_s': 1667, 'peak_gb': 7.55}
+{'step': 340, 'loss': 0.6749, 'lr': 9.464139109829321e-05, 'resp_tok': 29133, 'elapsed_s': 1716, 'peak_gb': 7.55}
+{'step': 350, 'loss': 0.6268, 'lr': 9.42728012826605e-05, 'resp_tok': 29895, 'elapsed_s': 1766, 'peak_gb': 7.55}
+{'step': 360, 'loss': 0.6609, 'lr': 9.389272045892024e-05, 'resp_tok': 29563, 'elapsed_s': 1817, 'peak_gb': 7.55}
+{'step': 370, 'loss': 0.6596, 'lr': 9.350124727707197e-05, 'resp_tok': 26237, 'elapsed_s': 1866, 'peak_gb': 7.55}
+{'step': 380, 'loss': 0.6356, 'lr': 9.309848334400246e-05, 'resp_tok': 30709, 'elapsed_s': 1917, 'peak_gb': 7.55}
+{'step': 390, 'loss': 0.6468, 'lr': 9.268453319711363e-05, 'resp_tok': 30419, 'elapsed_s': 1967, 'peak_gb': 7.55}
+{'step': 400, 'loss': 0.6487, 'lr': 9.225950427718975e-05, 'resp_tok': 29373, 'elapsed_s': 2017, 'peak_gb': 7.55}
+{'step': 410, 'loss': 0.6915, 'lr': 9.182350690051133e-05, 'resp_tok': 27180, 'elapsed_s': 2066, 'peak_gb': 7.55}
+{'step': 420, 'loss': 0.6663, 'lr': 9.13766542302225e-05, 'resp_tok': 23149, 'elapsed_s': 2116, 'peak_gb': 7.55}
+{'step': 430, 'loss': 0.6483, 'lr': 9.091906224695935e-05, 'resp_tok': 28524, 'elapsed_s': 2166, 'peak_gb': 7.55}
+{'step': 440, 'loss': 0.5712, 'lr': 9.045084971874738e-05, 'resp_tok': 28471, 'elapsed_s': 2216, 'peak_gb': 7.55}
+{'step': 450, 'loss': 0.6095, 'lr': 8.997213817017507e-05, 'resp_tok': 24620, 'elapsed_s': 2266, 'peak_gb': 7.55}
+{'step': 460, 'loss': 0.6298, 'lr': 8.948305185085225e-05, 'resp_tok': 27585, 'elapsed_s': 2316, 'peak_gb': 7.55}
+{'step': 470, 'loss': 0.6058, 'lr': 8.898371770316111e-05, 'resp_tok': 25047, 'elapsed_s': 2364, 'peak_gb': 7.55}
+{'step': 480, 'loss': 0.6983, 'lr': 8.847426532930831e-05, 'resp_tok': 26707, 'elapsed_s': 2414, 'peak_gb': 7.55}
+{'step': 490, 'loss': 0.6382, 'lr': 8.795482695768658e-05, 'resp_tok': 25356, 'elapsed_s': 2465, 'peak_gb': 7.55}
+{'step': 500, 'loss': 0.5831, 'lr': 8.742553740855506e-05, 'resp_tok': 28182, 'elapsed_s': 2516, 'peak_gb': 7.55}
+saved runs/k16/step500
+{'step': 510, 'loss': 0.6768, 'lr': 8.688653405904652e-05, 'resp_tok': 29234, 'elapsed_s': 2566, 'peak_gb': 7.55}
+^C^C   
+{'step': 520, 'loss': 0.6317, 'lr': 8.633795680751116e-05, 'resp_tok': 27763, 'elapsed_s': 2617, 'peak_gb': 7.55}
+^C^C^C^C^C
+^X^Z
+[1]+  Stopped                 python step3/train_freeze.py --k 16 --steps 2000 --out runs/k16
+(main) root@C.40624358:/workspace/ShallowOcean$ python step3/drift_check.py --adapter runs/k16/step500 --out step3/drift_results_k16_step500.json
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 234/234 [00:05<00:00, 39.80it/s]
+/venv/main/lib/python3.12/site-packages/bitsandbytes/backends/cuda/ops.py:213: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.
+  torch._check_is_size(blocksize)
+Traceback (most recent call last):
+  File "/workspace/ShallowOcean/step3/drift_check.py", line 143, in <module>
+    main()
+  File "/workspace/ShallowOcean/step3/drift_check.py", line 55, in main
+    model = PeftModel.from_pretrained(model, args.adapter)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/main/lib/python3.12/site-packages/peft/peft_model.py", line 582, in from_pretrained
+    load_result = model.load_adapter(
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/venv/main/lib/python3.12/site-packages/peft/peft_model.py", line 1408, in load_adapter
+    load_result = set_peft_model_state_dict(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/main/lib/python3.12/site-packages/peft/utils/save_and_load.py", line 644, in set_peft_model_state_dict
+    state_dict = convert_peft_adapter_state_dict_for_transformers(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/main/lib/python3.12/site-packages/peft/utils/transformers_weight_conversion.py", line 509, in convert_peft_adapter_state_dict_for_transformers
+    peft_weight_conversions = build_peft_weight_mapping(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/main/lib/python3.12/site-packages/peft/utils/transformers_weight_conversion.py", line 268, in build_peft_weight_mapping
+    new_conversion = orig_conversion.__class__(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: WeightConverter.__init__() got an unexpected keyword argument 'distributed_operation'
+
+
+(main) root@C.40624358:/workspace/ShallowOcean$ python step3/drift_check.py --adapter runs/k16/step500 --out step3/drift_results_k16_step500.json
+Loading weights:  65%|███████████████████████████████████████████████████████████████▋                                  | 152/234 [00:02<00:01, 65.53it/s]
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 234/234 [00:04<00:00, 57.94it/s]
+/venv/main/lib/python3.12/site-packages/bitsandbytes/backends/cuda/ops.py:213: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.
+  torch._check_is_size(blocksize)
+PEFT adapter loader hit WeightConverter.__init__() got an unexpected keyword argument 'distributed_operation'; falling back to direct state_dict load
+/venv/main/lib/python3.12/site-packages/peft/mapping_func.py:72: UserWarning: You are trying to modify a model with PEFT for a second time. If you want to reload the model with a different config, make sure to call `.unload()` before.
+  warnings.warn(
+/venv/main/lib/python3.12/site-packages/peft/tuners/tuners_utils.py:302: UserWarning: Already found a `peft_config` attribute in the model. This will lead to having multiple adapters in the model. Make sure to know what you are doing!
+  warnings.warn(
+warning: missing adapter keys after fallback load: 110
+['base_model.model.model.layers.2.feed_forward.gate.modules_to_save.default.weight', 'base_model.model.model.layers.2.feed_forward.experts.lora_A_gate_up', 'base_model.model.model.layers.2.feed_forward.experts.lora_B_gate_up', 'base_model.model.model.layers.2.feed_forward.experts.lora_A_down', 'base_model.model.model.layers.2.feed_forward.experts.lora_B_down']
+loaded 48 adapter tensors from runs/k16/step500
+loaded expert LoRA from runs/k16/step500
+/venv/main/lib/python3.12/site-packages/bitsandbytes/backends/cuda/ops.py:468: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.
+  torch._check_is_size(blocksize)
+[1/20] code       union=29.2/32 pick@4=0.27 pick@8=0.42 pick@16=0.68 (19.1 tok/s)
+[2/20] code       union=28.5/32 pick@4=0.29 pick@8=0.45 pick@16=0.67 (20.1 tok/s)
+[3/20] code       union=28.3/32 pick@4=0.33 pick@8=0.51 pick@16=0.73 (19.8 tok/s)
+[4/20] code       union=28.4/32 pick@4=0.24 pick@8=0.39 pick@16=0.65 (19.8 tok/s)
+[5/20] code       union=27.9/32 pick@4=0.26 pick@8=0.41 pick@16=0.69 (19.8 tok/s)
+[6/20] reasoning  union=29.3/32 pick@4=0.28 pick@8=0.46 pick@16=0.72 (20.0 tok/s)
+[7/20] reasoning  union=24.4/32 pick@4=0.33 pick@8=0.48 pick@16=0.74 (20.3 tok/s)
+[8/20] reasoning  union=27.3/32 pick@4=0.22 pick@8=0.43 pick@16=0.72 (19.7 tok/s)
+[9/20] reasoning  union=27.3/32 pick@4=0.30 pick@8=0.48 pick@16=0.74 (19.8 tok/s)
+[10/20] reasoning  union=28.2/32 pick@4=0.36 pick@8=0.52 pick@16=0.76 (19.8 tok/s)
+[11/20] chat       union=25.5/32 pick@4=0.28 pick@8=0.49 pick@16=0.76 (20.2 tok/s)
+[12/20] chat       union=22.0/32 pick@4=0.33 pick@8=0.53 pick@16=0.78 (20.0 tok/s)
+[13/20] chat       union=27.6/32 pick@4=0.27 pick@8=0.45 pick@16=0.74 (19.8 tok/s)
+[14/20] chat       union=25.4/32 pick@4=0.23 pick@8=0.41 pick@16=0.70 (19.8 tok/s)
+[15/20] chat       union=26.1/32 pick@4=0.22 pick@8=0.40 pick@16=0.70 (20.2 tok/s)
+[16/20] knowledge  union=25.7/32 pick@4=0.28 pick@8=0.44 pick@16=0.72 (20.1 tok/s)
+[17/20] knowledge  union=26.3/32 pick@4=0.18 pick@8=0.35 pick@16=0.61 (20.3 tok/s)
+[18/20] knowledge  union=27.1/32 pick@4=0.23 pick@8=0.37 pick@16=0.67 (20.3 tok/s)
+[19/20] knowledge  union=21.7/32 pick@4=0.23 pick@8=0.42 pick@16=0.72 (20.4 tok/s)
+[20/20] knowledge  union=27.2/32 pick@4=0.25 pick@8=0.43 pick@16=0.70 (20.5 tok/s)
+
+| keep (by prefill mass) | decode pick coverage | decode mass coverage |
+|---|---|---|
+| 4/32 | 0.27 | 0.20 |
+| 8/32 | 0.44 | 0.34 |
+| 16/32 | 0.71 | 0.61 |
+
+decode expert union: mean 26.7/32 per layer
+peak GPU memory: 6.0 GB
+wrote step3/drift_results_k16_step500.json
