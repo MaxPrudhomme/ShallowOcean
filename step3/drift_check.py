@@ -55,6 +55,11 @@ def _with_default_adapter_name(key: str) -> str:
         return key.replace(".lora_B.weight", ".lora_B.default.weight")
     if ".modules_to_save.weight" in key:
         return key.replace(".modules_to_save.weight", ".modules_to_save.default.weight")
+    if key.endswith(".feed_forward.gate.weight"):
+        # transformers-5.x PEFT saving strips the modules_to_save wrapper name.
+        return key.replace(
+            ".feed_forward.gate.weight", ".feed_forward.gate.modules_to_save.default.weight"
+        )
     return key
 
 
