@@ -205,6 +205,13 @@ deployment condition. Consequences:
 1. Drift coverage is the wrong success metric for this objective. The right
    Phase 2 metric is **quality under masked decode** (route prompt →
    `set_keep_masks` → generate) vs `baseline_outputs.json`.
+
+   Confirmed at full convergence (2026-06-12, fresh 5090 box, k16 run to
+   step 2000): pick cov 0.27/0.45/0.72 at keep 4/8/16, decode union
+   26.6/32 — all within noise of both step500 and the no-adapter base
+   (0.25/0.43/0.69, union 28.2). 1500 more steps moved nothing; the
+   question is closed. Raw data:
+   `step3/drift_results_k16_step2000.json` (on the box).
 2. If concentrated free routing is ever wanted, the loss needs an explicit
    term penalizing router mass outside the keep set.
 
